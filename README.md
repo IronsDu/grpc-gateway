@@ -6,15 +6,20 @@ The GRPC HTTP Proxy
 * not need generate code before compiler 
 
 ## Dependent
-* VS 2017 or gcc 7.0
-* nghttp2
-* protobuf
+* [nghttp2](https://github.com/nghttp2/nghttp2)
+* [protobuf](https://github.com/google/protobuf)
+* [brynet](https://github.com/IronsDu/brynet)
 
-## Build
-1. `git submodule init`
-2. `git submodule update`
-3. `mkdir build` & cd `build`
-4. `cmake -G "Visual Studio 15 Win64" ..`
+## Build On Windows
+1. install [vcpkg](https://github.com/Microsoft/vcpkg)
+2. `vcpkg install protobuf`
+3. `vcpkg install nghtt2`
+4. `vcpkg install brynet --head`
+5. mkdir build & cd build
+6. cmake ..
+
+## Build On Linux
+Please install protobuf,nghtt2,brynet by hand.
 
 ## Test
 1. run your grpc server, listen port:`8888`

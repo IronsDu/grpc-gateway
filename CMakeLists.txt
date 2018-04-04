@@ -11,57 +11,12 @@ elseif(UNIX)
   endif()
 endif()
 
-set(net_src_list
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/EventLoop.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/CurrentThread.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/DataSocket.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/SocketLibFunction.c
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/TCPService.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/WrapTCPService.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/Connector.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/ListenThread.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/fdset.c
-)
+include_directories("${PROJECT_SOURCE_DIR}/src/")
 
-set(timer_src_list
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/timer/Timer.cpp
-)
-
-set(base_src_list
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/array.c
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/buffer.c
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/systemlib.c
-)
-
-set(http_src_list
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/http/http_parser.c
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/http/HttpParser.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/net/http/HttpService.cpp
-)
-
-set(utils_src_list
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/base64.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/md5calc.cpp
-	${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/SHA1.cpp
-  ${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/brynet/utils/app_status.c
-)
-
-include_directories("${PROJECT_SOURCE_DIR}/3rdparty/brynet/src/")
-include_directories("${PROJECT_SOURCE_DIR}/3rdparty/nghttp2/include/")
-include_directories("${PROJECT_SOURCE_DIR}/3rdparty/protobuf/include/")
-LINK_DIRECTORIES("${PROJECT_SOURCE_DIR}/3rdparty/nghttp2/lib/")
-LINK_DIRECTORIES("${PROJECT_SOURCE_DIR}/3rdparty/protobuf/lib/")
-
-add_executable(grpc_proxy ${net_src_list} 
-  ${timer_src_list} 
-  ${base_src_list} 
-  ${utils_src_list} 
-  ${http_src_list} 
-  ${PROJECT_SOURCE_DIR}/src/GrpcGateway.cpp)
+add_executable(grpc_proxy ${PROJECT_SOURCE_DIR}/src/GrpcGateway.cpp)
 if(WIN32)
   target_link_libraries(grpc_proxy ws2_32)
   target_link_libraries(grpc_proxy nghttp2)
-  target_link_libraries(grpc_proxy libprotobufd)
 elseif(UNIX)
   find_package(Threads REQUIRED)
   target_link_libraries(grpc_proxy pthread)

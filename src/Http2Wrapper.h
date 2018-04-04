@@ -20,23 +20,13 @@ typedef  size_t ssize_t;
 #include <brynet/net/http/HttpService.h>
 #include <brynet/net/http/HttpFormat.h>
 #include <brynet/net/http/WebSocketFormat.h>
-#include <brynet/utils/systemlib.h>
 #include <brynet/net/Connector.h>  
 #include <brynet/utils/packet.h>
-
-#include "google/protobuf/compiler/code_generator.h"
-#include "google/protobuf/descriptor.h"
-#include "google/protobuf/compiler/importer.h"
-#include "google/protobuf/dynamic_message.h"
-#include "google/protobuf/util/json_util.h"
 
 #include "nghttp2/nghttp2.h"
 
 using namespace brynet;
 using namespace brynet::net;
-
-using namespace google::protobuf;
-using namespace google::protobuf::compiler;
 
 typedef struct {
     /* The NULL-terminated URI string to retrieve. */
