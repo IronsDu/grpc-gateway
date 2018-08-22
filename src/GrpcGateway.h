@@ -21,7 +21,7 @@ public:
 
     ProxyManager(DiskSourceTree* sourceTree,
         AsyncConnector::PTR connector,
-        std::shared_ptr<WrapTcpService> tcpService,
+        std::shared_ptr<TcpService> tcpService,
         std::string backendIP,
         int backendPort) :
         mImporter(sourceTree, NULL),
@@ -41,7 +41,7 @@ public:
         return mAsyncConnector;
     }
 
-    const std::shared_ptr<WrapTcpService>& getTcpService() const
+    const std::shared_ptr<TcpService>& getTcpService() const
     {
         return mTcpService;
     }
@@ -59,7 +59,7 @@ public:
 private:
     Importer                        mImporter;
     AsyncConnector::PTR             mAsyncConnector;
-    std::shared_ptr<WrapTcpService> mTcpService;
+    std::shared_ptr<TcpService>     mTcpService;
 
     std::string                     mBackendIP;
     int                             mBackendPort;
@@ -67,7 +67,7 @@ private:
 
 // receive grpc reply, translate to http, response to client
 static void HandleGrpcReply(const HttpSession::PTR& httpSession,
-    const TCPSession::PTR& session,
+    const DataSocket::PTR& session,
     const google::protobuf::Descriptor* outputTypeDesc,
     const uint8_t* data, 
     size_t len)
@@ -120,7 +120,7 @@ static void HandleConnectedBackend(const ProxyManager::PTR& manager,
     const std::string& methodName,
     const std::string& requestJson,
     const HttpSession::PTR& httpSession,
-    const TCPSession::PTR& session)
+    const DataSocket::PTR& session)
 {
     // TODO:://now, can't use session_data for shared_ptr, it's used void* ud of some nghttp2 callback
     http2_session_data *session_data = new http2_session_data;
@@ -166,7 +166,7 @@ static void HandleConnectedBackend(const ProxyManager::PTR& manager,
         }
         auto requestBinary = requestMsg->SerializePartialAsString();
 
-        session->setDataCallback([session_data](const TCPSession::PTR& session, const char* buffer, size_t len) {
+        session->setDataCallback([session_data]( const char* buffer, size_t len) {
             auto readlen = nghttp2_session_mem_recv(session_data->session, (const uint8_t*)buffer, len);
             session_send(session_data);
             return readlen;
@@ -184,7 +184,7 @@ static void HandleConnectedBackend(const ProxyManager::PTR& manager,
 
         sendRpcRequest(session_data, rpcPath, requestBinary, HandleGrpcReplyCallback);
 
-        session->setDisConnectCallback([session_data](const TCPSession::PTR& session) {
+        session->setDisConnectCallback([session_data](const DataSocket::PTR& session) {
             delete session_data;
         });
 
@@ -236,17 +236,14 @@ static void HandleHttpDataFromClient(const ProxyManager::PTR& manager, const Htt
             httpSession, 
             std::placeholders::_1);
 
-        manager->getTcpService()->addSession(std::move(socket),
-            backendSessionInitCallback,
-            false, 
-            nullptr, 
-            false);
+        manager->getTcpService()->addDataSocket(std::move(socket),
+            brynet::net::TcpService::AddSocketOption::WithEnterCallback(backendSessionInitCallback));
     }, [httpSession]() {
         httpSession->postShutdown();
     });    
 }
 
-static void HandleClientSessionInit(const ProxyManager::PTR& manager, const TCPSession::PTR& session)
+static void HandleClientSessionInit(const ProxyManager::PTR& manager, const DataSocket::PTR& session)
 {
     // register HTTP Handle
     HttpService::setup(session, [manager](const HttpSession::PTR& httpSession) {
@@ -264,7 +261,8 @@ static void HandleClientSessionInit(const ProxyManager::PTR& manager, const TCPS
 static void HaneleClientEnter(const ProxyManager::PTR& manager, brynet::net::TcpSocket::PTR socket)
 {
     auto sessionInitCallback = std::bind(HandleClientSessionInit, manager, std::placeholders::_1);
-    manager->getTcpService()->addSession(std::move(socket), sessionInitCallback, false, nullptr, false);
+    manager->getTcpService()->addDataSocket(std::move(socket), 
+        brynet::net::TcpService::AddSocketOption::WithEnterCallback(sessionInitCallback));
 }
 
 static void RunProxy(std::string proxyIP, int proxyPort,
@@ -276,8 +274,8 @@ static void RunProxy(std::string proxyIP, int proxyPort,
 
     auto asyncConnector = AsyncConnector::Create();
     asyncConnector->startWorkerThread();
-    auto tcpService = std::make_shared<WrapTcpService>();
-    tcpService->startWorkThread(std::thread::hardware_concurrency());
+    auto tcpService = TcpService::Create();
+    tcpService->startWorkerThread(std::thread::hardware_concurrency());
 
     auto manager = std::make_shared<ProxyManager>(&sourceTree,
         asyncConnector,
@@ -318,7 +316,7 @@ static void RunProxy(std::string proxyIP, int proxyPort,
     }
 
     listenThread->stopListen();
-    tcpService->stopWorkThread();
+    tcpService->stopWorkerThread();
     asyncConnector->stopWorkerThread();
 }
 

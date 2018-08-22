@@ -56,7 +56,7 @@ struct http2_session_data {
     // TODO::destroy session memory
     nghttp2_session *session;
     std::unordered_map<int, HTTP2_DATA_CALLBACK> dataCallbacks;
-    TCPSession::PTR tcpsession;
+    DataSocket::PTR tcpsession;
     std::string packet_data;
 };
 
@@ -211,7 +211,7 @@ static int sendRpcRequest(http2_session_data *session_data,
     return stream_id;
 }
 
-static bool setupHttp2Connection(const TCPSession::PTR& session, http2_session_data *session_data) {
+static bool setupHttp2Connection(const DataSocket::PTR& session, http2_session_data *session_data) {
     session_data->tcpsession = session;
 
     nghttp2_session_callbacks *callbacks;
